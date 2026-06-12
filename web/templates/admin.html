@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hashit — admin console</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="/static/js/common.js" defer></script>
+<script src="/static/js/admin.js" defer></script>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center">
+    <a href="/" class="logo"><em>#</em>hashit</a>
+    <span class="admin-badge">admin</span>
+  </div>
+  <div class="header-right">
+    <input type="password" id="token-input" placeholder="Enter admin token" onkeydown="if(event.key==='Enter')load()">
+    <button class="btn-sm btn-green" onclick="load()">Connect</button>
+    <a href="/" class="btn-sm btn-ghost" style="text-decoration:none">← site</a>
+  </div>
+</header>
+
+<main class="admin-layout-wrap">
+  <!-- Authentication Lock Screen -->
+  <div class="auth-screen" id="auth-screen">
+    <div class="auth-icon">🔐</div>
+    <div class="auth-title">Admin Dashboard</div>
+    <div class="auth-sub">Please input your administrative token above to view statistics and manage shared assets.</div>
+  </div>
+
+  <!-- Dashboard Panel -->
+  <div id="dashboard" style="display:none">
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat"><div class="stat-val green" id="s-files">—</div><div class="stat-lbl">active files</div></div>
+      <div class="stat"><div class="stat-val blue" id="s-size">—</div><div class="stat-lbl">total size</div></div>
+      <div class="stat"><div class="stat-val" id="s-dls">—</div><div class="stat-lbl">total downloads</div></div>
+      <div class="stat"><div class="stat-val red" id="s-exp">—</div><div class="stat-lbl">expired (pending purge)</div></div>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">Shared Items</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" class="search" id="search" placeholder="Search files/slugs..." oninput="filterTable()">
+        <button class="btn-sm btn-ghost" onclick="load()">↻ refresh</button>
+        <button class="btn-sm btn-red" onclick="purgeAll()">purge expired</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>slug</th><th>filename</th><th>type</th>
+            <th>size</th><th>downloads</th><th>expires</th>
+            <th>ip address</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="files-tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <button onclick="prevPage()" id="prev-btn" disabled>← prev</button>
+      <span id="page-label">page 1</span>
+      <button onclick="nextPage()" id="next-btn">next →</button>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <span style="color:var(--primary)">#</span>hashit v2.0 · built by <a href="https://github.com/ne0k1r4" style="color:var(--primary);text-decoration:none;font-weight:700">ne0k1r4</a> · india 🇮🇳
+</footer>
+
+</body>
+</html>

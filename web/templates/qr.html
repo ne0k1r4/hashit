@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hashit — qr designer</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="/static/js/common.js" defer></script>
+<script src="/static/js/qr.js" defer></script>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo"><em>#</em>hashit</a>
+  <a href="/" class="back">← back to dashboard</a>
+</header>
+
+<main class="col-layout-wrap" style="max-width:960px">
+  <div class="page-title">Artistic QR Code Designer</div>
+  <p class="page-sub">Create a personalized download/decryption portal QR code with styling and custom color presets.</p>
+
+  <div class="layout">
+    <!-- Controls Panel -->
+    <div class="controls">
+
+      <!-- slug selector -->
+      <div class="ctrl-section">
+        <div class="ctrl-label">slug / reference key</div>
+        <div class="url-chip" id="url-display" contenteditable="true" spellcheck="false"
+             oninput="onUrlChange()" onclick="this.focus()">x7k2m9ab</div>
+      </div>
+
+      <!-- style selection matrix -->
+      <div class="ctrl-section">
+        <div class="ctrl-label">Visual Style</div>
+        <div class="style-grid">
+          <button class="style-btn active" data-style="dots" onclick="setStyle('dots',this)">
+            <span class="style-icon">⬤</span>dots
+          </button>
+          <button class="style-btn" data-style="rounded" onclick="setStyle('rounded',this)">
+            <span class="style-icon">▣</span>rounded
+          </button>
+          <button class="style-btn" data-style="blocks" onclick="setStyle('blocks',this)">
+            <span class="style-icon">█</span>blocks
+          </button>
+          <button class="style-btn" data-style="gradient" onclick="setStyle('gradient',this)">
+            <span class="style-icon">◈</span>gradient
+          </button>
+          <button class="style-btn" data-style="neon" onclick="setStyle('neon',this)">
+            <span class="style-icon">✦</span>neon
+          </button>
+          <button class="style-btn" data-style="minimal" onclick="setStyle('minimal',this)">
+            <span class="style-icon">◻</span>minimal
+          </button>
+        </div>
+      </div>
+
+      <!-- color theme palettes -->
+      <div class="ctrl-section">
+        <div class="ctrl-label">Preset Theme</div>
+        <div class="theme-grid" id="theme-grid"></div>
+      </div>
+
+      <!-- manual override inputs -->
+      <div class="ctrl-section">
+        <div class="ctrl-label">Color Overrides</div>
+        <div class="color-row">
+          <div class="color-field">
+            <label>Foreground</label>
+            <div class="color-input-wrap" onclick="document.getElementById('fg-color').click()">
+              <div class="color-swatch" id="fg-swatch">
+                <input type="color" id="fg-color" value="#e8e8e8" oninput="onColor('fg',this.value)">
+              </div>
+              <span class="color-hex" id="fg-hex">#e8e8e8</span>
+            </div>
+          </div>
+          <div class="color-field">
+            <label>Background</label>
+            <div class="color-input-wrap" onclick="document.getElementById('bg-color').click()">
+              <div class="color-swatch" id="bg-swatch">
+                <input type="color" id="bg-color" value="#0a0a0a" oninput="onColor('bg',this.value)">
+              </div>
+              <span class="color-hex" id="bg-hex">#0a0a0a</span>
+            </div>
+          </div>
+          <div class="color-field">
+            <label>Accent</label>
+            <div class="color-input-wrap" onclick="document.getElementById('acc-color').click()">
+              <div class="color-swatch" id="acc-swatch">
+                <input type="color" id="acc-color" value="#00d46a" oninput="onColor('acc',this.value)">
+              </div>
+              <span class="color-hex" id="acc-hex">#00d46a</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- size scaling slider -->
+      <div class="ctrl-section">
+        <div class="ctrl-label">Dimension Bounds</div>
+        <div class="slider-row">
+          <span style="font-size:.75em;color:var(--text-muted)">200px</span>
+          <input type="range" class="slider" id="size-slider" min="200" max="1024" step="64" value="512" oninput="onSize(this.value)">
+          <span class="slider-val" id="size-val">512 × 512</span>
+        </div>
+      </div>
+
+      <!-- action buttons -->
+      <button class="dl-btn" id="dl-btn" onclick="download()">
+        ↓ Download QR (.png)
+      </button>
+      <button class="share-btn" onclick="copyLink()">
+        ⧉ Copy API endpoint URL
+      </button>
+
+    </div>
+
+    <!-- Live Preview Display -->
+    <div class="preview-card">
+      <div class="preview-header">
+        <span class="preview-title">rendered output</span>
+        <span class="preview-badge" id="preview-badge">dots · dark</span>
+      </div>
+      <div class="preview-body" id="preview-body">
+        <div class="spin" id="spinner"></div>
+        <img id="qr-img" class="qr-img" style="display:none" alt="QR code">
+      </div>
+      <div class="preview-footer">
+        <div class="preview-meta" id="preview-meta"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-brand">
+    <span style="color:var(--primary)">#</span>hashit ·
+    built by <a href="https://github.com/ne0k1r4" class="footer-brand-link">ne0k1r4</a> · india 🇮🇳
+  </div>
+  <a href="/api/docs">api docs</a>
+</footer>
+
+</body>
+</html>

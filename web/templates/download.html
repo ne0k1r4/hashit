@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hashit — download</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="/static/js/common.js" defer></script>
+<script src="/static/js/download.js" defer></script>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo"><span class="logo-hash">#</span>hashit</a>
+  <a href="/" class="back-link">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    share a file
+  </a>
+</header>
+
+<main class="card-main-wrap">
+  <!-- Loading Card -->
+  <div class="card" id="card-loading">
+    <div class="card-loading">
+      <div class="loader"></div>
+      <div style="color:var(--text-muted);font-size:0.9em">Retrieving metadata...</div>
+    </div>
+  </div>
+
+  <!-- Expired or Invalid Link Card -->
+  <div class="card" id="card-expired" style="display:none">
+    <div class="expired-card">
+      <div class="expired-icon">💨</div>
+      <div class="expired-title">Link Expired</div>
+      <div class="expired-sub" id="expired-msg">This upload has expired, reached its download limit, or never existed.</div>
+      <br><br>
+      <a href="/" style="color:var(--primary);font-size:0.9em;text-decoration:none;font-weight:600">← Upload another file</a>
+    </div>
+  </div>
+
+  <!-- Active Download Card -->
+  <div class="card" id="card-main" style="display:none">
+    <div class="card-header">
+      <div class="file-icon" id="file-icon">📦</div>
+      <div class="file-info">
+        <div class="file-name" id="file-name">—</div>
+        <div class="file-size" id="file-size">—</div>
+      </div>
+    </div>
+    <div class="meta-row" id="meta-row"></div>
+    <div class="card-body">
+      <div class="error-box" id="error-box"></div>
+      <div class="pw-section" id="pw-section">
+        <div class="pw-label">Decryption Password</div>
+        <div class="pw-wrap">
+          <input type="password" class="pw-input" id="pw-input"
+                 placeholder="Enter password to decrypt"
+                 onkeydown="if(event.key==='Enter') doDownload()">
+          <button class="pw-toggle" onclick="togglePw('pw-input', this)" type="button">👁</button>
+        </div>
+      </div>
+      <button class="btn-dl" id="dl-btn" onclick="doDownload()" disabled>
+        Download
+      </button>
+      <button class="btn-secondary" onclick="copyLink()">Copy link</button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-brand">
+    <span style="color:var(--primary)">#</span>hashit
+    <span>·</span>
+    built by <a href="https://github.com/ne0k1r4" class="footer-brand-link">ne0k1r4</a>
+    <span>·</span>
+    india 🇮🇳
+  </div>
+  <a href="/">share something</a>
+</footer>
+
+</body>
+</html>

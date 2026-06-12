@@ -1,0 +1,19 @@
+services:
+  hashit:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - data:/data/uploads
+      - db:/data/db
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  data:
+  db:

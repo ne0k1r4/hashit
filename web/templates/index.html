@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="hashit — drop a file, get a link. no account, no tracking.">
+<title>hashit — zero-friction file sharing</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="/static/js/common.js" defer></script>
+<script src="/static/js/index.js" defer></script>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo">
+    <span class="logo-hash">#</span>hashit
+    <span class="logo-badge">v2.0</span>
+  </a>
+  <nav>
+    <a href="/api/docs">api</a>
+    <a href="https://github.com/ne0k1r4/hashit" class="nav-gh">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      ne0k1r4
+    </a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow">built by ne0k1r4 · india</div>
+  <h1>Drop a file.<br><em>Get a link.</em></h1>
+  <p class="hero-sub">Secure, zero-friction file sharing. No registration, auto-deletion, password lock.</p>
+  <div class="terminal">
+    <div class="terminal-body">
+      <div class="t-line">
+        <span class="t-prompt">$</span>
+        <span class="t-cmd">hashit send <span class="t-arg">./dump.sql.gz</span> --expires <span class="t-arg">1h</span> --max-downloads <span class="t-arg">1</span></span>
+      </div>
+      <div class="t-out">↑ uploading dump.sql.gz (142 MB)...</div>
+      <div class="t-out">✓ done in 1.8s</div>
+      <div class="t-url">https://hashit.io/x7k2m9ab (expires 1h · burns after 1 download)</div>
+      <div class="t-line"><span class="t-cursor"></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="upload-section">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('file', this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      File
+    </button>
+    <button class="tab" onclick="switchTab('paste', this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+      Paste
+    </button>
+  </div>
+
+  <!-- file panel -->
+  <div id="panel-file" class="panel active">
+    <div class="dropzone" id="dropzone"
+         ondragover="onDragOver(event)"
+         ondragleave="onDragLeave(event)"
+         ondrop="onDrop(event)">
+      <input type="file" id="file-input" onchange="onFileSelect(this.files)">
+      <div id="dz-default">
+        <div class="dz-icon">↑</div>
+        <div class="dz-title">drop a file or click to browse</div>
+        <div class="dz-sub">up to 512 MB · any file type</div>
+      </div>
+      <div class="dz-selected" id="dz-selected">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+        <span class="dz-filename" id="dz-name"></span>
+        <span class="dz-filesize" id="dz-size"></span>
+      </div>
+    </div>
+
+    <div class="options">
+      <div class="opt">
+        <label>Expires after</label>
+        <select id="f-ttl">
+          <option value="15m">15 minutes</option>
+          <option value="1h">1 hour</option>
+          <option value="24h" selected>24 hours</option>
+          <option value="7d">7 days</option>
+        </select>
+      </div>
+      <div class="opt">
+        <label>Max downloads</label>
+        <input type="number" id="f-maxdl" placeholder="unlimited" min="1" max="10000">
+      </div>
+      <div class="opt full">
+        <label>Password <span style="text-transform:none;letter-spacing:0;opacity:.6">(optional)</span></label>
+        <div class="pw-wrap">
+          <input type="password" id="f-pw" placeholder="leave blank for none" autocomplete="new-password">
+          <button class="pw-toggle" onclick="togglePw('f-pw', this)" type="button">👁</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress" id="progress">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-label">
+        <span id="progress-pct">0%</span>
+        <span id="progress-speed"></span>
+      </div>
+    </div>
+
+    <button class="btn-upload" id="upload-btn" onclick="doUpload()" disabled>
+      Upload &amp; get link
+    </button>
+  </div>
+
+  <!-- paste panel -->
+  <div id="panel-paste" class="panel">
+    <textarea id="paste-text" placeholder="paste code, logs, configs, anything...&#10;&#10;supports any language — python, bash, sql, yaml..."></textarea>
+    <div class="options">
+      <div class="opt">
+        <label>Filename</label>
+        <input type="text" id="p-name" placeholder="paste.txt">
+      </div>
+      <div class="opt">
+        <label>Expires after</label>
+        <select id="p-ttl">
+          <option value="1h">1 hour</option>
+          <option value="24h" selected>24 hours</option>
+          <option value="7d">7 days</option>
+        </select>
+      </div>
+      <div class="opt full">
+        <label>Password <span style="text-transform:none;letter-spacing:0;opacity:.6">(optional)</span></label>
+        <div class="pw-wrap">
+          <input type="password" id="p-pw" placeholder="leave blank for none" autocomplete="new-password">
+          <button class="pw-toggle" onclick="togglePw('p-pw', this)" type="button">👁</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn-upload" onclick="doPaste()">Share paste</button>
+  </div>
+
+  <!-- result -->
+  <div class="result" id="result">
+    <div class="result-label">✓ ready to share</div>
+    <div class="result-url-row">
+      <input type="text" id="result-url" readonly onclick="this.select()">
+      <button class="btn-copy" id="copy-btn" onclick="copyUrl()">Copy</button>
+    </div>
+    <div class="result-meta" id="result-meta"></div>
+    <div class="result-note" id="result-note"></div>
+  </div>
+</div>
+
+<!-- features -->
+<div class="features">
+  <p class="features-title"><span>everything you need.</span> nothing you don't.</p>
+  <div class="features-grid">
+    <div class="feat">
+      <div class="feat-icon">⚡</div>
+      <h4>instant</h4>
+      <p>Upload, get a link, share. No registration, no waiting, no confirmation emails.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">💣</div>
+      <h4>self-destructs</h4>
+      <p>Set expiry from 15 minutes to 7 days. Files disappear automatically — nothing lingers.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔐</div>
+      <h4>password protected</h4>
+      <p>Lock any file or paste. PBKDF2 hashing, constant-time comparison. No plaintext storage.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔥</div>
+      <h4>burn after read</h4>
+      <p>Set max downloads to 1. File self-destructs after the first person downloads it.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🛡️</div>
+      <h4>hardened</h4>
+      <p>Rate limiting, security headers, CSP, path traversal protection, no fingerprinting.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🐳</div>
+      <h4>self-hostable</h4>
+      <p>One Docker command. Your VPS, your rules, your data. Full control.</p>
+    </div>
+  </div>
+</div>
+
+<!-- install strip -->
+<div class="install-strip">
+  <p>cli · zero dependencies · pure python stdlib</p>
+  <div class="code-block">
+    <span>$</span> pip install hashit
+  </div>
+</div>
+
+<footer>
+  <div class="footer-brand">
+    <span style="color:var(--primary)">#</span>hashit
+    <span>·</span>
+    built by <a href="https://github.com/ne0k1r4" class="footer-brand-link">ne0k1r4</a>
+    <span>·</span>
+    india 🇮🇳
+  </div>
+  <div class="footer-right">
+    <a href="/api/docs">api docs</a>
+    <a href="https://github.com/ne0k1r4/hashit">source</a>
+    <a href="https://github.com/ne0k1r4/hashit#self-hosting">self-host</a>
+  </div>
+</footer>
+
+</body>
+</html>

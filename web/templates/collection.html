@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hashit — collection</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="/static/js/common.js" defer></script>
+<script src="/static/js/collection.js" defer></script>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo"><em>#</em>hashit</a>
+  <a href="/" class="back">← back to share</a>
+</header>
+
+<main class="col-layout-wrap">
+  <!-- Loading collection info -->
+  <div class="loading" id="loading">
+    <div class="spin"></div>
+    <div style="font-size:0.95em">Retrieving collection items...</div>
+  </div>
+
+  <!-- Invalid/Expired collection -->
+  <div id="not-found" style="display:none" class="not-found">
+    <div class="not-found-icon">💨</div>
+    <div class="not-found-title">Collection Expired</div>
+    <div class="not-found-sub">This link has expired, or never existed.</div>
+    <br><br>
+    <a href="/" style="color:var(--primary);font-size:0.9em;text-decoration:none;font-weight:600">← Back to upload panel</a>
+  </div>
+
+  <!-- Collection detail view -->
+  <div id="content" style="display:none">
+    <div class="col-header">
+      <div class="col-title" id="col-title">Collection</div>
+      <div class="col-meta" id="col-meta"></div>
+    </div>
+    <div class="file-list" id="file-list"></div>
+    <button class="dl-all" onclick="downloadAll()">↓ Download all files</button>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-brand">
+    <span style="color:var(--primary)">#</span>hashit
+    <span>·</span>
+    built by <a href="https://github.com/ne0k1r4" class="footer-brand-link">ne0k1r4</a>
+    <span>·</span>
+    india 🇮🇳
+  </div>
+  <a href="/">share something</a>
+</footer>
+
+</body>
+</html>
