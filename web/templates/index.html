@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="hashit — drop a file, get a link. no account, no tracking.">
-<title>hashit — zero-friction file sharing</title>
+<meta name="description" content="hashit — drop a file, get a link, Senpai! no account, waifu-guarded.">
+<title>hashit — waifu-guarded secure sharing (uwu) ♡</title>
 <link rel="stylesheet" href="/static/css/style.css">
 <script src="/static/js/common.js" defer></script>
 <script src="/static/js/index.js" defer></script>
@@ -26,18 +26,26 @@
 </header>
 
 <div class="hero">
-  <div class="hero-eyebrow">built by ne0k1r4 · india</div>
-  <h1>Drop a file.<br><em>Get a link.</em></h1>
-  <p class="hero-sub">Secure, zero-friction file sharing. No registration, auto-deletion, password lock.</p>
+  <div class="hero-eyebrow">built with love by ne0k1r4-chan · india 🇮🇳</div>
+  <h1>Drop a file, Senpai!<br><em>Get a sharing link.</em></h1>
+  <p class="hero-sub">Waifu-guarded secure file sharing! No registration, auto-deletion, password lock. (•‿•) ♡</p>
+  
+  <div class="mascot-greeting">
+    <img src="/static/img/waifu_mascot.png" class="mascot-img" alt="Waifu Mascot">
+    <div class="mascot-bubble">
+      "Hello Senpai! Drop your files here and I will guard them for you! (•‿•) ♡"
+    </div>
+  </div>
+
   <div class="terminal">
     <div class="terminal-body">
       <div class="t-line">
         <span class="t-prompt">$</span>
         <span class="t-cmd">hashit send <span class="t-arg">./dump.sql.gz</span> --expires <span class="t-arg">1h</span> --max-downloads <span class="t-arg">1</span></span>
       </div>
-      <div class="t-out">↑ uploading dump.sql.gz (142 MB)...</div>
-      <div class="t-out">✓ done in 1.8s</div>
-      <div class="t-url">https://hashit.io/x7k2m9ab (expires 1h · burns after 1 download)</div>
+      <div class="t-out">↑ uploading dump.sql.gz (142 MB) for you, Senpai...</div>
+      <div class="t-out">✓ upload done! (´｡• ᵕ •｡`)</div>
+      <div class="t-url">https://hashit.io/x7k2m9ab (expires 1h · self-destructs after download)</div>
       <div class="t-line"><span class="t-cursor"></span></div>
     </div>
   </div>
@@ -64,8 +72,8 @@
       <input type="file" id="file-input" onchange="onFileSelect(this.files)">
       <div id="dz-default">
         <div class="dz-icon">↑</div>
-        <div class="dz-title">drop a file or click to browse</div>
-        <div class="dz-sub">up to 512 MB · any file type</div>
+        <div class="dz-title">drop a file or click to browse, Senpai!</div>
+        <div class="dz-sub">up to 512 MB · any file type · safe with me! ( >ᴗ<)</div>
       </div>
       <div class="dz-selected" id="dz-selected">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
@@ -78,10 +86,10 @@
       <div class="opt">
         <label>Expires after</label>
         <select id="f-ttl">
-          <option value="15m">15 minutes</option>
-          <option value="1h">1 hour</option>
-          <option value="24h" selected>24 hours</option>
-          <option value="7d">7 days</option>
+          <option value="15m">15 mins (quick!)</option>
+          <option value="1h">1 hour (standard)</option>
+          <option value="24h" selected>24 hours (sweet)</option>
+          <option value="7d">7 days (forever-ish)</option>
         </select>
       </div>
       <div class="opt">
@@ -89,7 +97,7 @@
         <input type="number" id="f-maxdl" placeholder="unlimited" min="1" max="10000">
       </div>
       <div class="opt full">
-        <label>Password <span style="text-transform:none;letter-spacing:0;opacity:.6">(optional)</span></label>
+        <label>Password <span style="text-transform:none;letter-spacing:0;opacity:.6">(p-password protect? ⁄ ⁄•⁄-⁄•⁄ ⁄)</span></label>
         <div class="pw-wrap">
           <input type="password" id="f-pw" placeholder="leave blank for none" autocomplete="new-password">
           <button class="pw-toggle" onclick="togglePw('f-pw', this)" type="button">👁</button>
@@ -106,13 +114,13 @@
     </div>
 
     <button class="btn-upload" id="upload-btn" onclick="doUpload()" disabled>
-      Upload &amp; get link
+      Upload for me, Senpai! ♡
     </button>
   </div>
 
   <!-- paste panel -->
   <div id="panel-paste" class="panel">
-    <textarea id="paste-text" placeholder="paste code, logs, configs, anything...&#10;&#10;supports any language — python, bash, sql, yaml..."></textarea>
+    <textarea id="paste-text" placeholder="paste code, logs, configs, anything for me, Senpai...&#10;&#10;supports any language — python, bash, sql, yaml... ( >ᴗ<) ♡"></textarea>
     <div class="options">
       <div class="opt">
         <label>Filename</label>
@@ -121,20 +129,20 @@
       <div class="opt">
         <label>Expires after</label>
         <select id="p-ttl">
-          <option value="1h">1 hour</option>
-          <option value="24h" selected>24 hours</option>
-          <option value="7d">7 days</option>
+          <option value="1h">1 hour (standard)</option>
+          <option value="24h" selected>24 hours (sweet)</option>
+          <option value="7d">7 days (forever-ish)</option>
         </select>
       </div>
       <div class="opt full">
-        <label>Password <span style="text-transform:none;letter-spacing:0;opacity:.6">(optional)</span></label>
+        <label>Password <span style="text-transform:none;letter-spacing:0;opacity:.6">(p-password protect? ⁄ ⁄•⁄-⁄•⁄ ⁄)</span></label>
         <div class="pw-wrap">
           <input type="password" id="p-pw" placeholder="leave blank for none" autocomplete="new-password">
           <button class="pw-toggle" onclick="togglePw('p-pw', this)" type="button">👁</button>
         </div>
       </div>
     </div>
-    <button class="btn-upload" onclick="doPaste()">Share paste</button>
+    <button class="btn-upload" onclick="doPaste()">Share paste, Senpai! ♡</button>
   </div>
 
   <!-- result -->
@@ -151,27 +159,27 @@
 
 <!-- features -->
 <div class="features">
-  <p class="features-title"><span>everything you need.</span> nothing you don't.</p>
+  <p class="features-title"><span>waifu-hardened security.</span> for all your needs, Senpai.</p>
   <div class="features-grid">
     <div class="feat">
       <div class="feat-icon">⚡</div>
       <h4>instant</h4>
-      <p>Upload, get a link, share. No registration, no waiting, no confirmation emails.</p>
+      <p>Upload, get a link, share instantly. No registration, no waiting, Senpai!</p>
     </div>
     <div class="feat">
       <div class="feat-icon">💣</div>
       <h4>self-destructs</h4>
-      <p>Set expiry from 15 minutes to 7 days. Files disappear automatically — nothing lingers.</p>
+      <p>Set expiry from 15 minutes to 7 days. Files disappear automatically so no one else sees them, baka!</p>
     </div>
     <div class="feat">
       <div class="feat-icon">🔐</div>
-      <h4>password protected</h4>
-      <p>Lock any file or paste. PBKDF2 hashing, constant-time comparison. No plaintext storage.</p>
+      <h4>waifu-guarded</h4>
+      <p>Secure lock for files/pastes. PBKDF2 hashing, constant-time comparison. Waifu-guarded!</p>
     </div>
     <div class="feat">
       <div class="feat-icon">🔥</div>
       <h4>burn after read</h4>
-      <p>Set max downloads to 1. File self-destructs after the first person downloads it.</p>
+      <p>Set download limit. File self-destructs after the first person downloads it, Senpai.</p>
     </div>
     <div class="feat">
       <div class="feat-icon">🛡️</div>
@@ -188,7 +196,7 @@
 
 <!-- install strip -->
 <div class="install-strip">
-  <p>cli · zero dependencies · pure python stdlib</p>
+  <p>cli · zero dependencies · pure python stdlib · super fast!</p>
   <div class="code-block">
     <span>$</span> pip install hashit
   </div>
@@ -198,7 +206,7 @@
   <div class="footer-brand">
     <span style="color:var(--primary)">#</span>hashit
     <span>·</span>
-    built by <a href="https://github.com/ne0k1r4" class="footer-brand-link">ne0k1r4</a>
+    built with love by <a href="https://github.com/ne0k1r4" class="footer-brand-link">ne0k1r4-chan</a>
     <span>·</span>
     india 🇮🇳
   </div>

@@ -8,17 +8,17 @@
 
 :root {
   /* Color System */
-  --bg-raw: 240, 10%, 4%;
+  --bg-raw: 320, 20%, 6%;
   --bg: hsl(var(--bg-raw));
-  --bg-card: hsla(240, 10%, 6%, 0.8);
-  --bg-card-hover: hsla(240, 10%, 9%, 0.85);
+  --bg-card: hsla(320, 20%, 8%, 0.8);
+  --bg-card-hover: hsla(320, 20%, 12%, 0.85);
   
-  --primary-raw: 142, 86%, 53%;
+  --primary-raw: 335, 100%, 75%;
   --primary: hsl(var(--primary-raw));
-  --primary-glow: hsla(var(--primary-raw), 0.15);
-  --primary-hover: hsl(142, 90%, 60%);
+  --primary-glow: hsla(var(--primary-raw), 0.2);
+  --primary-hover: hsl(335, 100%, 80%);
   
-  --blue-raw: 217, 91%, 60%;
+  --blue-raw: 260, 95%, 78%;
   --blue: hsl(var(--blue-raw));
   --blue-glow: hsla(var(--blue-raw), 0.15);
   
@@ -31,12 +31,12 @@
   --yellow: hsl(var(--yellow-raw));
   --yellow-glow: hsla(var(--yellow-raw), 0.1);
   
-  --border: hsl(240, 6%, 15%);
-  --border-focus: hsl(240, 5%, 26%);
+  --border: hsl(320, 15%, 18%);
+  --border-focus: hsl(335, 50%, 35%);
   
-  --text: hsl(0, 0%, 98%);
-  --text-muted: hsl(240, 5%, 65%);
-  --text-dim: hsl(240, 4%, 40%);
+  --text: hsl(335, 20%, 98%);
+  --text-muted: hsl(320, 10%, 75%);
+  --text-dim: hsl(320, 8%, 50%);
   
   /* Typography & Layout */
   --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -69,7 +69,7 @@ html {
 }
 
 body {
-  background: radial-gradient(circle at 50% -100px, hsla(142, 86%, 53%, 0.12), transparent 700px), var(--bg);
+  background: radial-gradient(circle at 50% -100px, hsla(335, 100%, 75%, 0.18), transparent 700px), var(--bg);
   color: var(--text);
   font-family: var(--sans);
   font-size: 14px;
@@ -521,7 +521,7 @@ footer a:hover {
 }
 .hero h1 em {
   font-style: normal;
-  background: linear-gradient(135deg, var(--primary), #a3ffce);
+  background: linear-gradient(135deg, var(--primary), #ccb3ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -749,7 +749,7 @@ footer a:hover {
 }
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary), #a3ffce);
+  background: linear-gradient(90deg, var(--primary), #ccb3ff);
   width: 0%;
   transition: width 0.1s linear;
   border-radius: 4px;
@@ -1913,4 +1913,67 @@ tr:hover td {
 
 @media (max-width: 500px) {
   .card-header, .card-body, .meta-row { padding-left: 24px; padding-right: 24px; }
+}
+
+/* Mascot Greeting Component */
+.mascot-greeting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  max-width: 540px;
+  margin: 0 auto 32px;
+  padding: 0 16px;
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.mascot-img {
+  width: 130px;
+  height: 130px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(255, 128, 179, 0.25));
+  animation: float 4s ease-in-out infinite;
+}
+
+.mascot-bubble {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-focus);
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-size: 0.9em;
+  color: var(--text);
+  line-height: 1.5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  max-width: 360px;
+  text-align: left;
+}
+
+.mascot-bubble::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 14px;
+  height: 14px;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border-focus);
+  border-bottom: 1px solid var(--border-focus);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@media (max-width: 580px) {
+  .mascot-greeting {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  .mascot-bubble::before {
+    display: none;
+  }
 }
