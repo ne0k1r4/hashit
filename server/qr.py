@@ -313,6 +313,19 @@ def generate(
     renderer = STYLE_MAP.get(style, render_dots)
     img      = renderer(matrix, size, fg_col, bg_col, acc_col)
 
+    # Waifu Mascot centerpiece overlay
+    try:
+        from pathlib import Path
+        mascot_path = Path(__file__).parent.parent / "web" / "static" / "img" / "waifu_mascot.png"
+        if mascot_path.exists():
+            mascot = Image.open(mascot_path).convert("RGBA")
+            m_size = int(size * 0.18)
+            mascot = mascot.resize((m_size, m_size), Image.Resampling.LANCZOS)
+            pos = ((size - m_size) // 2, (size - m_size) // 2)
+            img.paste(mascot, pos, mascot)
+    except Exception:
+        pass
+
     buf = io.BytesIO()
     img.convert("RGB").save(buf, format="PNG", optimize=True)
     buf.seek(0)
