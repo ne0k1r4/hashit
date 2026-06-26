@@ -1,6 +1,4 @@
-"""
-security helpers — hashing, rate limiting, validation, headers
-"""
+# security helpers — hashing, rate limiting, validation, headers
 
 import re
 import os
@@ -15,30 +13,31 @@ from fastapi import Request, HTTPException
 
 SECRET = os.getenv("HASHIT_SECRET", secrets.token_hex(32))
 
-SLUG_RE    = re.compile(r"^[a-z2-9]{8}$")
+SLUG_RE = re.compile(r"^[a-z2-9]{8}$")
 MAX_FN_LEN = 255
 
 BLOCKED_EXTS = {
-    ".exe",".dll",".bat",".cmd",".com",".msi",".ps1",".vbs",
-    ".jar",".py",".rb",".sh",".bash",".zsh",".fish",".php",
-    ".asp",".aspx",".jsp",".phtml",".scr",".pif",".lnk",".reg",
+    ".exe", ".dll", ".bat", ".cmd", ".com", ".msi", ".ps1", ".vbs",
+    ".jar", ".py", # yeah i know, but people were uploading scripts
+    ".rb", ".sh", ".bash", ".zsh", ".fish", ".php",
+    ".asp", ".aspx", ".jsp", ".phtml", ".scr", ".pif", ".lnk", ".reg",
 }
 
-FORCE_DOWNLOAD_EXTS = {".html",".htm",".svg",".xml",".xhtml"}
+FORCE_DOWNLOAD_EXTS = {".html", ".htm", ".svg", ".xml", ".xhtml"}
 
 SAFE_INLINE_MIMES = {
-    "text/plain","application/json","application/pdf",
-    "image/png","image/jpeg","image/gif","image/webp","image/bmp","image/svg+xml",
-    "audio/mpeg","audio/ogg","audio/wav",
-    "video/mp4","video/webm","video/ogg",
+    "text/plain", "application/json", "application/pdf",
+    "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/svg+xml",
+    "audio/mpeg", "audio/ogg", "audio/wav",
+    "video/mp4", "video/webm", "video/ogg",
 }
 
 SECURITY_HEADERS = {
-    "X-Content-Type-Options":    "nosniff",
-    "X-Frame-Options":           "DENY",
-    "X-XSS-Protection":          "1; mode=block",
-    "Referrer-Policy":           "no-referrer",
-    "Permissions-Policy":        "geolocation=(), microphone=(), camera=()",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-XSS-Protection": "1; mode=block",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     "Content-Security-Policy": (
         "default-src 'self'; "
@@ -54,14 +53,15 @@ SECURITY_HEADERS = {
 
 def pw_hash(pw: str) -> str:
     salt = secrets.token_bytes(32)
-    dk   = hashlib.pbkdf2_hmac("sha256", pw.encode(), salt, 200_000)
+    dk = hashlib.pbkdf2_hmac("sha256", pw.encode(), salt, 200_000)
     return salt.hex() + ":" + dk.hex()
 
 
 def pw_verify(pw: str, stored: str) -> bool:
     try:
         salt, dk = bytes.fromhex(stored[:64]), bytes.fromhex(stored[65:])
-        check    = hashlib.pbkdf2_hmac("sha256", pw.encode(), salt, 200_000)
+        check = hashlib.pbkdf2_hmac("sha256", pw.encode(), salt, 200_000)
+        # learned about timing attacks in class, compare_digest prevents that
         return hmac.compare_digest(check, dk)
     except Exception:
         return False
@@ -83,10 +83,11 @@ def safe_filename(name: str) -> str:
 
 
 def get_ip(request: Request) -> str:
+    # TODO: handle ipv6 properly, currently breaks on some proxies
     behind_proxy = os.getenv("HASHIT_BEHIND_PROXY", "0") == "1"
     if behind_proxy:
         fwd = request.headers.get("X-Forwarded-For", "")
-        ip  = fwd.split(",")[0].strip()
+        ip = fwd.split(",")[0].strip()
         try:
             ipaddress.ip_address(ip)
             return ip
@@ -107,31 +108,32 @@ def parse_ttl(s: str) -> int:
 
 
 def new_slug(length: int = 8) -> str:
+    # no 0,1,o,i,l — they look the same in most fonts, trust me
     return "".join(secrets.choice("abcdefghjkmnpqrstuvwxyz23456789") for _ in range(length))
 
 
-# ── rate limiter ──────────────────────────────────────────────────────────────
+# rate limiter
 
 class RateLimiter:
     def __init__(self):
-        self._data: dict[str, list[float]] = defaultdict(list)
+        self._hits = defaultdict(list)
 
     def allow(self, key: str, limit: int, window: int = 60) -> bool:
         now = time.monotonic()
-        self._data[key] = [t for t in self._data[key] if now - t < window]
-        if len(self._data[key]) >= limit:
+        self._hits[key] = [t for t in self._hits[key] if now - t < window]
+        if len(self._hits[key]) >= limit:
             return False
-        self._data[key].append(now)
+        self._hits[key].append(now)
         return True
 
     def cleanup(self):
         now = time.monotonic()
-        self._data = defaultdict(list, {
+        self._hits = defaultdict(list, {
             k: [t for t in v if now - t < 3600]
-            for k, v in self._data.items() if v
+            for k, v in self._hits.items() if v
         })
 
 limiter = RateLimiter()
 
-RL_UPLOAD   = int(os.getenv("HASHIT_RL_UPLOAD",   "20"))
+RL_UPLOAD = int(os.getenv("HASHIT_RL_UPLOAD", "20"))
 RL_DOWNLOAD = int(os.getenv("HASHIT_RL_DOWNLOAD", "120"))

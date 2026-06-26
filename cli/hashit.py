@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-hashit cli
-https://github.com/ne0k1r4/hashit
-"""
+# hashit cli (https://github.com/ne0k1r4/hashit)
 
 import os
 import sys
@@ -16,14 +13,17 @@ from pathlib import Path
 
 SERVER = os.getenv("HASHIT_SERVER", "https://hashit.io")
 
+# short names bc i got tired of typing RESET every time
 R = "\033[0m"; B = "\033[1m"; D = "\033[2m"
 G = "\033[32m"; RE = "\033[31m"; Y = "\033[33m"; C = "\033[36m"
 
 def die(msg):
+    # every cli needs a die(), fight me
     print(f"{RE}error:{R} {msg}", file=sys.stderr)
     sys.exit(1)
 
 def fmt_size(n):
+    # stolen from stackoverflow ngl
     for u in ["B","KB","MB","GB"]:
         if n < 1024: return f"{n:.1f} {u}"
         n /= 1024
@@ -34,6 +34,7 @@ def fmt_date(iso):
 
 
 class Multipart:
+    # built this myself bc requests adds too many deps
     def __init__(self):
         import os as _os
         self.boundary = "hashit" + _os.urandom(8).hex()
@@ -63,7 +64,7 @@ def api(endpoint, mp=None, method="POST"):
     url = f"{SERVER}{endpoint}"
     if mp:
         body = mp.encode()
-        req  = urllib.request.Request(url, data=body,
+        req = urllib.request.Request(url, data=body,
                headers={"Content-Type": mp.content_type()}, method=method)
     else:
         req = urllib.request.Request(url, method=method)
@@ -72,7 +73,7 @@ def api(endpoint, mp=None, method="POST"):
             return json.loads(r.read())
     except urllib.error.HTTPError as e:
         body = e.read().decode()
-        try:    detail = json.loads(body).get("detail", body)
+        try: detail = json.loads(body).get("detail", body)
         except: detail = body
         die(f"{e.code} — {detail}")
     except Exception as e:
@@ -80,6 +81,7 @@ def api(endpoint, mp=None, method="POST"):
 
 
 def cmd_send(args):
+    # TODO: add a progress bar for CLI uploads, ne0k1r4 was talking about using tqdm or writing a simple custom bar
     path = Path(args.file)
     if not path.exists():
         die(f"file not found: {path}")
@@ -91,9 +93,9 @@ def cmd_send(args):
     mp.add_file("file", path.name, path.read_bytes(),
                 mimetypes.guess_type(str(path))[0] or "application/octet-stream")
     mp.add_field("ttl", args.expires)
-    if args.password:      mp.add_field("password",      args.password)
+    if args.password: mp.add_field("password", args.password)
     if args.max_downloads: mp.add_field("max_downloads", str(args.max_downloads))
-    if args.note:          mp.add_field("note",          args.note)
+    if args.note: mp.add_field("note", args.note)
 
     r = api("/api/upload", mp)
     print(f" {G}done{R}")
@@ -108,8 +110,8 @@ def cmd_send(args):
     print(f"  {D}file     {R}{r['filename']}")
     print(f"  {D}size     {R}{fmt_size(r['size'])}")
     print(f"  {D}expires  {R}{fmt_date(r['expires_at'])}")
-    if r.get("protected"):      print(f"  {D}password {R}{Y}protected{R}")
-    if r.get("max_downloads"):  print(f"  {D}limit    {R}{r['max_downloads']} downloads")
+    if r.get("protected"): print(f"  {D}password {R}{Y}protected{R}")
+    if r.get("max_downloads"): print(f"  {D}limit    {R}{r['max_downloads']} downloads")
     print()
     print(f"  {D}curl -LO \"{r['url'].replace('/d/', '/api/download/')}\"{R}")
     print(f"  {D}delete token: {r['delete_token'][:16]}...{R}")
@@ -125,9 +127,9 @@ def cmd_paste(args):
         die("provide text or pipe via stdin: cat file.py | hashit paste -")
 
     mp = Multipart()
-    mp.add_field("content",  content)
+    mp.add_field("content", content)
     mp.add_field("filename", args.name)
-    mp.add_field("ttl",      args.expires)
+    mp.add_field("ttl", args.expires)
     if args.password: mp.add_field("password", args.password)
 
     r = api("/api/paste", mp)
@@ -161,7 +163,7 @@ def cmd_url(args):
 
 def cmd_info(args):
     slug = args.slug.rstrip("/").split("/")[-1]
-    url  = f"{SERVER}/api/info/{slug}"
+    url = f"{SERVER}/api/info/{slug}"
     if args.password:
         url += f"?password={urllib.parse.quote(args.password)}"
     try:
@@ -189,7 +191,7 @@ def cmd_info(args):
 
 def cmd_delete(args):
     slug = args.slug.rstrip("/").split("/")[-1]
-    url  = f"{SERVER}/api/delete/{slug}?token={urllib.parse.quote(args.token or '')}"
+    url = f"{SERVER}/api/delete/{slug}?token={urllib.parse.quote(args.token or '')}"
     if args.password:
         url += f"&password={urllib.parse.quote(args.password)}"
     req = urllib.request.Request(url, method="DELETE")
@@ -203,8 +205,8 @@ def cmd_delete(args):
 
 def cmd_qr(args):
     slug = args.slug.rstrip("/").split("/")[-1]
-    url  = f"{SERVER}/api/qr/{slug}"
-    out  = Path(args.output or f"{slug}.png")
+    url = f"{SERVER}/api/qr/{slug}"
+    out = Path(args.output or f"{slug}.png")
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
             out.write_bytes(resp.read())
@@ -214,6 +216,7 @@ def cmd_qr(args):
 
 
 def main():
+    # TODO: check HASHIT_SERVER env variable format on startup, sometimes i put a trailing slash and it breaks
     global SERVER
     p = argparse.ArgumentParser(
         prog="hashit",
@@ -239,51 +242,51 @@ examples:
     sub = p.add_subparsers(dest="cmd", metavar="command")
 
     # send
-    s = sub.add_parser("send",   help="upload a file")
+    s = sub.add_parser("send", help="upload a file")
     s.add_argument("file")
-    s.add_argument("--expires",       default="24h", metavar="TTL", help="e.g. 1h, 7d")
-    s.add_argument("--password",      default=None)
+    s.add_argument("--expires", default="24h", metavar="TTL", help="e.g. 1h, 7d")
+    s.add_argument("--password", default=None)
     s.add_argument("--max-downloads", default=None, type=int)
-    s.add_argument("--note",          default=None)
+    s.add_argument("--note", default=None)
 
     # paste
     pp = sub.add_parser("paste", help="share text or code")
     pp.add_argument("text", nargs="?", help="text to share (or - for stdin)")
-    pp.add_argument("--name",     default="paste.txt")
-    pp.add_argument("--expires",  default="24h", metavar="TTL")
+    pp.add_argument("--name", default="paste.txt")
+    pp.add_argument("--expires", default="24h", metavar="TTL")
     pp.add_argument("--password", default=None)
 
     # url
-    pu = sub.add_parser("url",   help="upload from URL")
+    pu = sub.add_parser("url", help="upload from URL")
     pu.add_argument("url")
-    pu.add_argument("--expires",  default="24h", metavar="TTL")
+    pu.add_argument("--expires", default="24h", metavar="TTL")
     pu.add_argument("--password", default=None)
 
     # info
-    i = sub.add_parser("info",   help="get file info")
+    i = sub.add_parser("info", help="get file info")
     i.add_argument("slug")
     i.add_argument("--password", default=None)
 
     # delete
     d = sub.add_parser("delete", help="delete a file")
     d.add_argument("slug")
-    d.add_argument("--token",    default=None, help="delete token")
+    d.add_argument("--token", default=None, help="delete token")
     d.add_argument("--password", default=None)
 
     # qr
-    q = sub.add_parser("qr",     help="generate QR code")
+    q = sub.add_parser("qr", help="generate QR code")
     q.add_argument("slug")
-    q.add_argument("--output",   default=None, metavar="FILE")
+    q.add_argument("--output", default=None, metavar="FILE")
 
     args = p.parse_args()
     SERVER = args.server.rstrip("/")
 
-    if   args.cmd == "send":   cmd_send(args)
-    elif args.cmd == "paste":  cmd_paste(args)
-    elif args.cmd == "url":    cmd_url(args)
-    elif args.cmd == "info":   cmd_info(args)
+    if args.cmd == "send": cmd_send(args)
+    elif args.cmd == "paste": cmd_paste(args)
+    elif args.cmd == "url": cmd_url(args)
+    elif args.cmd == "info": cmd_info(args)
     elif args.cmd == "delete": cmd_delete(args)
-    elif args.cmd == "qr":     cmd_qr(args)
+    elif args.cmd == "qr": cmd_qr(args)
     else: p.print_help()
 
 

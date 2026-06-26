@@ -1,7 +1,4 @@
-"""
-hashit — server v2.0
-ne0k1r4 · india
-"""
+# hashit — server v2.0 (by ne0k1r4 · india)
 
 import os
 import io
@@ -22,7 +19,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Streamin
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from .db       import init_db, get_db, purge_expired
+from .db import init_db, get_db, purge_expired
 from .security import (
     pw_hash, pw_verify, make_delete_token, verify_delete_token,
     safe_filename, get_ip, parse_ttl, new_slug,
@@ -30,13 +27,13 @@ from .security import (
     SAFE_INLINE_MIMES, SECURITY_HEADERS, RL_UPLOAD, RL_DOWNLOAD,
 )
 
-# ── config ─────────────────────────────────────────────────────────────────────
+# config
 
-UPLOAD_DIR  = Path(os.getenv("HASHIT_UPLOAD_DIR",    "/tmp/hashit_uploads"))
-MAX_SIZE    = int(os.getenv("HASHIT_MAX_SIZE_MB",     "512")) * 1 << 20
-MAX_TTL     = int(os.getenv("HASHIT_MAX_TTL_HOURS",   "168")) * 3600
-BASE_URL    = os.getenv("HASHIT_BASE_URL",            "http://localhost:8000").rstrip("/")
-ADMIN_TOKEN = os.getenv("HASHIT_ADMIN_TOKEN",         secrets.token_hex(16))
+UPLOAD_DIR = Path(os.getenv("HASHIT_UPLOAD_DIR", "/tmp/hashit_uploads"))
+MAX_SIZE = int(os.getenv("HASHIT_MAX_SIZE_MB", "512")) * 1 << 20
+MAX_TTL = int(os.getenv("HASHIT_MAX_TTL_HOURS", "168")) * 3600
+BASE_URL = os.getenv("HASHIT_BASE_URL", "http://localhost:8000").rstrip("/")
+ADMIN_TOKEN = os.getenv("HASHIT_ADMIN_TOKEN", secrets.token_hex(16))
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -47,7 +44,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("hashit")
 
-# ── app ────────────────────────────────────────────────────────────────────────
+# app
 
 app = FastAPI(
     title="hashit",
@@ -85,6 +82,7 @@ async def security_headers(request: Request, call_next):
 
 @app.on_event("startup")
 async def startup():
+    # TODO: check if upload directory is actually writable before starting, sometimes docker volume mounts fail silently
     init_db()
     asyncio.create_task(_bg_purge())
     asyncio.create_task(_bg_rl_cleanup())
@@ -94,6 +92,7 @@ async def startup():
 
 async def _bg_purge():
     while True:
+        # runs every 5 min in background, not perfect but works
         await asyncio.sleep(300)
         n = await purge_expired()
         if n:
@@ -102,40 +101,42 @@ async def _bg_purge():
 
 async def _bg_rl_cleanup():
     while True:
+        # runs every 10 min in background to clean up rate limiter
         await asyncio.sleep(600)
         limiter.cleanup()
 
 
-# ── helpers ────────────────────────────────────────────────────────────────────
+# helpers
 
 def ts_iso(ts: float) -> str:
     return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
 
 
 def require_admin(request: Request):
+    # TODO: switch to proper JWT at some point, token in header is fine for now
     token = request.headers.get("X-Admin-Token") or request.query_params.get("token")
     if not token or token != ADMIN_TOKEN:
         raise HTTPException(403, "admin token required")
 
 
-# ── upload ─────────────────────────────────────────────────────────────────────
+# upload
 
 @app.post("/api/upload")
 async def upload(
-    request:       Request,
-    file:          UploadFile = File(...),
-    ttl:           str = Form("24h"),
-    password:      Optional[str] = Form(None),
+    request: Request,
+    file: UploadFile = File(...),
+    ttl: str = Form("24h"),
+    password: Optional[str] = Form(None),
     max_downloads: Optional[int] = Form(None),
-    note:          Optional[str] = Form(None),
+    note: Optional[str] = Form(None),
 ):
     ip = get_ip(request)
     if not limiter.allow(f"up:{ip}", RL_UPLOAD):
         raise HTTPException(429, "too many uploads")
 
-    ttl_sec  = min(parse_ttl(ttl), MAX_TTL)
+    ttl_sec = min(parse_ttl(ttl), MAX_TTL)
     filename = safe_filename(file.filename or "file")
-    ext      = Path(filename).suffix.lower()
+    ext = Path(filename).suffix.lower()
 
     if ext in BLOCKED_EXTS:
         raise HTTPException(415, f"'{ext}' files are not allowed")
@@ -150,6 +151,7 @@ async def upload(
 
     try:
         async with aiofiles.open(dest, "wb") as f:
+            # read in 1mb chunks so we dont load the whole file into memory
             while chunk := await file.read(1 << 20):
                 size += len(chunk)
                 if size > MAX_SIZE:
@@ -163,9 +165,9 @@ async def upload(
         log.error("upload error ip=%s: %s", ip, e)
         raise HTTPException(500, "upload failed")
 
-    mime    = file.content_type or mimetypes.guess_type(filename)[0] or "application/octet-stream"
-    exp     = time.time() + ttl_sec
-    dtok    = make_delete_token(slug)
+    mime = file.content_type or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    exp = time.time() + ttl_sec
+    dtok = make_delete_token(slug)
     pw_hash_ = pw_hash(password) if password else None
 
     async with get_db() as db:
@@ -182,25 +184,25 @@ async def upload(
     log.info("upload slug=%s size=%d ip=%s ttl=%ds", slug, size, ip, ttl_sec)
 
     return {
-        "slug":          slug,
-        "url":           f"{BASE_URL}/d/{slug}",
-        "filename":      filename,
-        "size":          size,
-        "expires_at":    ts_iso(exp),
-        "protected":     password is not None,
+        "slug": slug,
+        "url": f"{BASE_URL}/d/{slug}",
+        "filename": filename,
+        "size": size,
+        "expires_at": ts_iso(exp),
+        "protected": password is not None,
         "max_downloads": max_downloads,
-        "delete_token":  dtok,
+        "delete_token": dtok,
     }
 
 
-# ── paste ──────────────────────────────────────────────────────────────────────
+# paste
 
 @app.post("/api/paste")
 async def paste(
-    request:  Request,
-    content:  str = Form(...),
+    request: Request,
+    content: str = Form(...),
     filename: str = Form("paste.txt"),
-    ttl:      str = Form("24h"),
+    ttl: str = Form("24h"),
     password: Optional[str] = Form(None),
 ):
     ip = get_ip(request)
@@ -211,12 +213,12 @@ async def paste(
     if password and len(password) > 1024:
         raise HTTPException(400, "password too long")
 
-    ttl_sec  = min(parse_ttl(ttl), MAX_TTL)
+    ttl_sec = min(parse_ttl(ttl), MAX_TTL)
     filename = safe_filename(filename)
-    slug     = new_slug()
-    dest     = UPLOAD_DIR / slug
-    exp      = time.time() + ttl_sec
-    dtok     = make_delete_token(slug)
+    slug = new_slug()
+    dest = UPLOAD_DIR / slug
+    exp = time.time() + ttl_sec
+    dtok = make_delete_token(slug)
     pw_hash_ = pw_hash(password) if password else None
 
     async with aiofiles.open(dest, "w", encoding="utf-8") as f:
@@ -235,22 +237,22 @@ async def paste(
 
     log.info("paste slug=%s ip=%s", slug, ip)
     return {
-        "slug":       slug,
-        "url":        f"{BASE_URL}/d/{slug}",
-        "filename":   filename,
-        "size":       len(content.encode()),
+        "slug": slug,
+        "url": f"{BASE_URL}/d/{slug}",
+        "filename": filename,
+        "size": len(content.encode()),
         "expires_at": ts_iso(exp),
         "delete_token": dtok,
     }
 
 
-# ── upload from URL ────────────────────────────────────────────────────────────
+# upload from URL
 
 @app.post("/api/upload-url")
 async def upload_url(
     request: Request,
-    url:     str = Form(...),
-    ttl:     str = Form("24h"),
+    url: str = Form(...),
+    ttl: str = Form("24h"),
     password: Optional[str] = Form(None),
 ):
     import urllib.request
@@ -260,7 +262,6 @@ async def upload_url(
     if not limiter.allow(f"up:{ip}", RL_UPLOAD):
         raise HTTPException(429, "too many uploads")
 
-    # basic URL validation
     if not url.startswith(("http://", "https://")):
         raise HTTPException(400, "only http/https URLs supported")
 
@@ -273,18 +274,18 @@ async def upload_url(
             data = resp.read(MAX_SIZE + 1)
             if len(data) > MAX_SIZE:
                 raise HTTPException(413, "remote file too large")
-            mime     = resp.headers.get_content_type() or "application/octet-stream"
+            mime = resp.headers.get_content_type() or "application/octet-stream"
             filename = safe_filename(url.rstrip("/").split("/")[-1] or "file")
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(400, f"could not fetch URL: {e}")
 
-    ttl_sec  = min(parse_ttl(ttl), MAX_TTL)
-    slug     = new_slug()
-    dest     = UPLOAD_DIR / slug
-    exp      = time.time() + ttl_sec
-    dtok     = make_delete_token(slug)
+    ttl_sec = min(parse_ttl(ttl), MAX_TTL)
+    slug = new_slug()
+    dest = UPLOAD_DIR / slug
+    exp = time.time() + ttl_sec
+    dtok = make_delete_token(slug)
     pw_hash_ = pw_hash(password) if password else None
 
     dest.write_bytes(data)
@@ -302,16 +303,16 @@ async def upload_url(
 
     log.info("upload-url slug=%s from=%s ip=%s", slug, url[:60], ip)
     return {
-        "slug":       slug,
-        "url":        f"{BASE_URL}/d/{slug}",
-        "filename":   filename,
-        "size":       len(data),
+        "slug": slug,
+        "url": f"{BASE_URL}/d/{slug}",
+        "filename": filename,
+        "size": len(data),
         "expires_at": ts_iso(exp),
         "delete_token": dtok,
     }
 
 
-# ── info ───────────────────────────────────────────────────────────────────────
+# info
 
 @app.get("/api/info/{slug}")
 async def info(slug: str, request: Request, password: Optional[str] = None):
@@ -337,20 +338,20 @@ async def info(slug: str, request: Request, password: Optional[str] = None):
             raise HTTPException(403, "wrong password")
 
     return {
-        "slug":          slug,
-        "filename":      row["filename"],
-        "size":          row["size"],
-        "mime":          row["mime"],
-        "expires_at":    ts_iso(row["expires_at"]),
-        "downloads":     row["downloads"],
+        "slug": slug,
+        "filename": row["filename"],
+        "size": row["size"],
+        "mime": row["mime"],
+        "expires_at": ts_iso(row["expires_at"]),
+        "downloads": row["downloads"],
         "max_downloads": row["max_downloads"],
-        "protected":     row["password_hash"] is not None,
-        "is_paste":      bool(row["is_paste"]),
-        "note":          row["note"],
+        "protected": row["password_hash"] is not None,
+        "is_paste": bool(row["is_paste"]),
+        "note": row["note"],
     }
 
 
-# ── download ───────────────────────────────────────────────────────────────────
+# download
 
 @app.get("/api/download/{slug}")
 async def download(slug: str, request: Request, password: Optional[str] = None):
@@ -382,24 +383,23 @@ async def download(slug: str, request: Request, password: Optional[str] = None):
     if not path.exists():
         raise HTTPException(404, "file not found on disk")
 
-    # increment download count
     async with get_db() as db:
         await db.execute(
             "UPDATE files SET downloads=downloads+1 WHERE slug=?", (slug,)
         )
         await db.commit()
 
-    burn  = row["max_downloads"] and (row["downloads"] + 1) >= row["max_downloads"]
-    ext   = Path(row["filename"]).suffix.lower()
-    mime  = row["mime"]
+    burn = row["max_downloads"] and (row["downloads"] + 1) >= row["max_downloads"]
+    ext = Path(row["filename"]).suffix.lower()
+    mime = row["mime"]
 
     disp = (f'attachment; filename="{row["filename"]}"'
             if ext in FORCE_DOWNLOAD_EXTS or mime not in SAFE_INLINE_MIMES
             else f'inline; filename="{row["filename"]}"')
 
     headers = {
-        "Content-Disposition":    disp,
-        "Cache-Control":          "no-store, no-cache, must-revalidate, private",
+        "Content-Disposition": disp,
+        "Cache-Control": "no-store, no-cache, must-revalidate, private",
         "X-Content-Type-Options": "nosniff",
     }
 
@@ -408,6 +408,7 @@ async def download(slug: str, request: Request, password: Optional[str] = None):
 
     if burn:
         async def _burn():
+            # 2 second delay so the response actually sends before we nuke the file
             await asyncio.sleep(2)
             path.unlink(missing_ok=True)
             async with get_db() as db:
@@ -419,33 +420,30 @@ async def download(slug: str, request: Request, password: Optional[str] = None):
     return response
 
 
-# ── qr code ───────────────────────────────────────────────────────────────────
+# qr code
 
 @app.get("/api/qr/{slug}")
 async def qr_code(
-    slug:   str,
-    style:  str = "dots",
-    theme:  str = "dark",
-    size:   int = 512,
-    fg:     Optional[str] = None,
-    bg:     Optional[str] = None,
+    slug: str,
+    style: str = "dots",
+    theme: str = "dark",
+    size: int = 512,
+    fg: Optional[str] = None,
+    bg: Optional[str] = None,
     accent: Optional[str] = None,
 ):
     if not SLUG_RE.match(slug):
         raise HTTPException(404, "not found")
 
-    # validate size
     size = max(200, min(size, 1024))
 
-    # validate style/theme names (alphanumeric only)
     import re as _re
     if not _re.match(r"^[a-z]+$", style): style = "dots"
     if not _re.match(r"^[a-z]+$", theme): theme = "dark"
 
-    # validate hex colors
     hex_re = _re.compile(r"^#[0-9a-fA-F]{6}$")
-    if fg     and not hex_re.match(fg):     fg     = None
-    if bg     and not hex_re.match(bg):     bg     = None
+    if fg and not hex_re.match(fg): fg = None
+    if bg and not hex_re.match(bg): bg = None
     if accent and not hex_re.match(accent): accent = None
 
     try:
@@ -470,13 +468,13 @@ async def qr_code(
         raise HTTPException(500, "qr generation failed")
 
 
-# ── delete ─────────────────────────────────────────────────────────────────────
+# delete
 
 @app.delete("/api/delete/{slug}")
 async def delete(
-    slug:     str,
-    request:  Request,
-    token:    Optional[str] = None,
+    slug: str,
+    request: Request,
+    token: Optional[str] = None,
     password: Optional[str] = None,
 ):
     if not SLUG_RE.match(slug):
@@ -512,16 +510,16 @@ async def delete(
     return {"deleted": slug}
 
 
-# ── collections ────────────────────────────────────────────────────────────────
+# collections
 
 @app.post("/api/collection")
 async def create_collection(
     request: Request,
-    slugs:   str = Form(...),
-    title:   str = Form(""),
-    ttl:     str = Form("24h"),
+    slugs: str = Form(...),
+    title: str = Form(""),
+    ttl: str = Form("24h"),
 ):
-    ip      = get_ip(request)
+    ip = get_ip(request)
     if not limiter.allow(f"up:{ip}", RL_UPLOAD):
         raise HTTPException(429, "too many requests")
 
@@ -532,12 +530,11 @@ async def create_collection(
         raise HTTPException(400, "max 50 files per collection")
 
     ttl_sec = min(parse_ttl(ttl), MAX_TTL)
-    cslug   = new_slug()
-    exp     = time.time() + ttl_sec
-    dtok    = make_delete_token(cslug)
+    cslug = new_slug()
+    exp = time.time() + ttl_sec
+    dtok = make_delete_token(cslug)
 
     async with get_db() as db:
-        # verify all slugs exist
         for s in slug_list:
             cur = await db.execute("SELECT slug FROM files WHERE slug=?", (s,))
             if not await cur.fetchone():
@@ -555,10 +552,10 @@ async def create_collection(
         await db.commit()
 
     return {
-        "slug":         cslug,
-        "url":          f"{BASE_URL}/c/{cslug}",
-        "files":        len(slug_list),
-        "expires_at":   ts_iso(exp),
+        "slug": cslug,
+        "url": f"{BASE_URL}/c/{cslug}",
+        "files": len(slug_list),
+        "expires_at": ts_iso(exp),
         "delete_token": dtok,
     }
 
@@ -583,23 +580,23 @@ async def get_collection(slug: str):
         files = await cur.fetchall()
 
     return {
-        "slug":       slug,
-        "title":      col["title"],
+        "slug": slug,
+        "title": col["title"],
         "expires_at": ts_iso(col["expires_at"]),
         "files": [
             {
-                "slug":     r["slug"],
-                "url":      f"{BASE_URL}/d/{r['slug']}",
+                "slug": r["slug"],
+                "url": f"{BASE_URL}/d/{r['slug']}",
                 "filename": r["filename"],
-                "size":     r["size"],
-                "mime":     r["mime"],
+                "size": r["size"],
+                "mime": r["mime"],
             }
             for r in files
         ],
     }
 
 
-# ── admin ──────────────────────────────────────────────────────────────────────
+# admin
 
 @app.get("/api/admin/stats")
 async def admin_stats(request: Request):
@@ -611,13 +608,13 @@ async def admin_stats(request: Request):
         )
         row = await cur.fetchone()
         cur2 = await db.execute("SELECT COUNT(*) as n FROM files WHERE expires_at < ?", (time.time(),))
-        exp  = await cur2.fetchone()
+        exp = await cur2.fetchone()
     return {
-        "active_files":     row["n"] or 0,
+        "active_files": row["n"] or 0,
         "total_size_bytes": row["s"] or 0,
-        "total_downloads":  row["d"] or 0,
-        "expired_files":    exp["n"] or 0,
-        "version":          "2.0.0",
+        "total_downloads": row["d"] or 0,
+        "expired_files": exp["n"] or 0,
+        "version": "2.0.0",
         "base_url":         BASE_URL,
     }
 
@@ -633,13 +630,13 @@ async def admin_files(request: Request, limit: int = 50, offset: int = 0):
         rows = await cur.fetchall()
     return [
         {
-            "slug":       r["slug"],
-            "filename":   r["filename"],
-            "size":       r["size"],
-            "downloads":  r["downloads"],
+            "slug": r["slug"],
+            "filename": r["filename"],
+            "size": r["size"],
+            "downloads": r["downloads"],
             "expires_at": ts_iso(r["expires_at"]),
-            "ip":         r["ip"],
-            "is_paste":   bool(r["is_paste"]),
+            "ip": r["ip"],
+            "is_paste": bool(r["is_paste"]),
         }
         for r in rows
     ]
@@ -662,10 +659,11 @@ async def admin_delete(slug: str, request: Request):
     return {"deleted": slug}
 
 
-# ── health ─────────────────────────────────────────────────────────────────────
+# health
 
 @app.get("/health")
 async def health():
+    # TODO: add database connection status check to health probe, ne0k1r4 says we need it for uptime monitoring
     return {"status": "ok", "version": "2.0.0", "ts": int(time.time())}
 
 
@@ -680,7 +678,7 @@ async def public_stats():
     return {"files": row["n"], "size_bytes": row["s"], "version": "2.0.0"}
 
 
-# ── web routes ─────────────────────────────────────────────────────────────────
+# web routes
 
 TEMPLATE_DIR = Path(__file__).parent.parent / "web" / "templates"
 

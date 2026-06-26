@@ -1,7 +1,4 @@
-"""
-database layer — sqlite via aiosqlite
-WAL mode, proper indexes, connection pooling
-"""
+# database layer — sqlite via aiosqlite with WAL mode and proper indexes
 
 import os
 import time
@@ -15,6 +12,7 @@ DB_PATH = Path(os.getenv("HASHIT_DB_PATH", str(Path(__file__).parent.parent / "d
 
 
 def get_sync_db() -> sqlite3.Connection:
+    # TODO: test if WAL mode actually works on windows under high concurrency, sometimes locking fails
     DB_PATH.parent.mkdir(exist_ok=True)
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
@@ -34,39 +32,39 @@ PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
 
 CREATE TABLE IF NOT EXISTS files (
-    slug          TEXT PRIMARY KEY,
-    filename      TEXT NOT NULL,
-    path          TEXT NOT NULL,
-    size          INTEGER NOT NULL,
-    mime          TEXT NOT NULL,
+    slug TEXT PRIMARY KEY,
+    filename TEXT NOT NULL,
+    path TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    mime TEXT NOT NULL,
     password_hash TEXT,
-    expires_at    REAL NOT NULL,
+    expires_at REAL NOT NULL,
     max_downloads INTEGER,
-    downloads     INTEGER NOT NULL DEFAULT 0,
-    is_paste      INTEGER NOT NULL DEFAULT 0,
-    delete_token  TEXT NOT NULL,
-    created_at    REAL NOT NULL,
-    ip            TEXT,
-    note          TEXT
+    downloads INTEGER NOT NULL DEFAULT 0,
+    is_paste INTEGER NOT NULL DEFAULT 0,
+    delete_token TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    ip TEXT,
+    note TEXT
 );
 
 CREATE TABLE IF NOT EXISTS collections (
-    slug         TEXT PRIMARY KEY,
-    title        TEXT,
-    expires_at   REAL NOT NULL,
-    created_at   REAL NOT NULL,
-    ip           TEXT,
+    slug TEXT PRIMARY KEY,
+    title TEXT,
+    expires_at REAL NOT NULL,
+    created_at REAL NOT NULL,
+    ip TEXT,
     delete_token TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS collection_files (
     collection_slug TEXT NOT NULL REFERENCES collections(slug) ON DELETE CASCADE,
-    file_slug       TEXT NOT NULL REFERENCES files(slug) ON DELETE CASCADE,
+    file_slug TEXT NOT NULL REFERENCES files(slug) ON DELETE CASCADE,
     PRIMARY KEY (collection_slug, file_slug)
 );
 
 CREATE INDEX IF NOT EXISTS idx_files_expires ON files(expires_at);
-CREATE INDEX IF NOT EXISTS idx_files_ip      ON files(ip);
+CREATE INDEX IF NOT EXISTS idx_files_ip ON files(ip);
 """
 
 
@@ -79,8 +77,9 @@ def init_db():
 
 
 async def purge_expired() -> int:
+    # TODO: add a check to make sure database WAL file isn't growing indefinitely, need to vacuum occasionally
     async with get_db() as db:
-        cur  = await db.execute(
+        cur = await db.execute(
             "SELECT slug, path FROM files WHERE expires_at < ?", (time.time(),)
         )
         rows = await cur.fetchall()
