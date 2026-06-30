@@ -57,7 +57,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[BASE_URL],
+    allow_origins=["*"],
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type", "X-Admin-Token"],
     allow_credentials=False,
@@ -110,6 +110,18 @@ async def _bg_rl_cleanup():
 
 def ts_iso(ts: float) -> str:
     return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+
+
+def get_base_url(request: Request) -> str:
+    # Use request base url to automatically adapt to ngrok, local IP, or custom domains
+    env_url = os.getenv("HASHIT_BASE_URL")
+    if env_url:
+        return env_url.rstrip("/")
+    host = request.headers.get("X-Forwarded-Host") or request.headers.get("Host")
+    proto = request.headers.get("X-Forwarded-Proto") or request.url.scheme
+    if host:
+        return f"{proto}://{host}"
+    return str(request.base_url).rstrip("/")
 
 
 def require_admin(request: Request):
@@ -185,7 +197,7 @@ async def upload(
 
     return {
         "slug": slug,
-        "url": f"{BASE_URL}/d/{slug}",
+        "url": f"{get_base_url(request)}/d/{slug}",
         "filename": filename,
         "size": size,
         "expires_at": ts_iso(exp),
@@ -238,7 +250,7 @@ async def paste(
     log.info("paste slug=%s ip=%s", slug, ip)
     return {
         "slug": slug,
-        "url": f"{BASE_URL}/d/{slug}",
+        "url": f"{get_base_url(request)}/d/{slug}",
         "filename": filename,
         "size": len(content.encode()),
         "expires_at": ts_iso(exp),
@@ -304,7 +316,7 @@ async def upload_url(
     log.info("upload-url slug=%s from=%s ip=%s", slug, url[:60], ip)
     return {
         "slug": slug,
-        "url": f"{BASE_URL}/d/{slug}",
+        "url": f"{get_base_url(request)}/d/{slug}",
         "filename": filename,
         "size": len(data),
         "expires_at": ts_iso(exp),
@@ -425,6 +437,7 @@ async def download(slug: str, request: Request, password: Optional[str] = None):
 @app.get("/api/qr/{slug}")
 async def qr_code(
     slug: str,
+    request: Request,
     style: str = "dots",
     theme: str = "dark",
     size: int = 512,
@@ -451,7 +464,7 @@ async def qr_code(
         data = await asyncio.get_event_loop().run_in_executor(
             None,
             lambda: generate(
-                f"{BASE_URL}/d/{slug}",
+                f"{get_base_url(request)}/d/{slug}",
                 style=style, theme=theme, size=size,
                 fg=fg, bg=bg, accent=accent,
             )
@@ -553,7 +566,7 @@ async def create_collection(
 
     return {
         "slug": cslug,
-        "url": f"{BASE_URL}/c/{cslug}",
+        "url": f"{get_base_url(request)}/c/{cslug}",
         "files": len(slug_list),
         "expires_at": ts_iso(exp),
         "delete_token": dtok,
@@ -561,7 +574,7 @@ async def create_collection(
 
 
 @app.get("/api/collection/{slug}")
-async def get_collection(slug: str):
+async def get_collection(slug: str, request: Request):
     if not SLUG_RE.match(slug):
         raise HTTPException(404, "not found")
 
@@ -586,7 +599,7 @@ async def get_collection(slug: str):
         "files": [
             {
                 "slug": r["slug"],
-                "url": f"{BASE_URL}/d/{r['slug']}",
+                "url": f"{get_base_url(request)}/d/{r['slug']}",
                 "filename": r["filename"],
                 "size": r["size"],
                 "mime": r["mime"],
@@ -615,7 +628,7 @@ async def admin_stats(request: Request):
         "total_downloads": row["d"] or 0,
         "expired_files": exp["n"] or 0,
         "version": "2.0.0",
-        "base_url":         BASE_URL,
+        "base_url":         get_base_url(request),
     }
 
 
