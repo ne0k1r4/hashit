@@ -43,7 +43,27 @@ hashit delete x7k2m9ab --token <delete_token>
    ```sh
    docker compose up -d
    ```
-The portal will be live at `http://localhost:8000`.
+The portal will be live locally at `http://localhost:8000`.
+
+### Cloudflare Integration (Sharing / Public Access)
+
+`hashit` has built-in Cloudflare Tunnel integration allowing zero-configuration sharing:
+
+* **Quick Tunnel (Free Random Domain):**
+  If `TUNNEL_TOKEN` is left empty in `.env`, starting the container automatically spins up a Cloudflare Quick Tunnel. Check the docker logs to retrieve your temporary random URL:
+  ```sh
+  docker compose logs tunnel
+  ```
+  *(Example URL: `https://something-random.trycloudflare.com`)*
+  
+* **Custom Domain (Named Tunnel):**
+  1. Create a tunnel in your Cloudflare Zero Trust Dashboard.
+  2. Map your custom subdomain (e.g., `hashit.yourdomain.com`) to the internal service path `http://hashit:8000`.
+  3. Copy your Cloudflare Tunnel Token and add it to `.env`:
+     ```env
+     TUNNEL_TOKEN=your_cloudflare_tunnel_token_here
+     ```
+  4. Run `docker compose up -d` to connect securely under your domain.
 
 ## Testing
 

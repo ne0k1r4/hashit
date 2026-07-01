@@ -99,3 +99,18 @@ async def test_static_files():
         assert r_js.status_code == 200
         assert "javascript" in r_js.headers.get("content-type", "")
 
+
+@pytest.mark.asyncio
+async def test_cloudflare_ip(monkeypatch):
+    from server.security import get_ip
+    from fastapi import Request
+    monkeypatch.setenv("HASHIT_BEHIND_PROXY", "1")
+    scope = {
+        "type": "http",
+        "headers": [(b"cf-connecting-ip", b"203.0.113.195"), (b"x-forwarded-for", b"1.1.1.1")],
+        "client": ("127.0.0.1", 12345)
+    }
+    req = Request(scope=scope)
+    ip = get_ip(req)
+    assert ip == "203.0.113.195"
+

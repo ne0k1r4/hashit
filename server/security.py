@@ -86,6 +86,13 @@ def get_ip(request: Request) -> str:
     # TODO: handle ipv6 properly, currently breaks on some proxies
     behind_proxy = os.getenv("HASHIT_BEHIND_PROXY", "0") == "1"
     if behind_proxy:
+        cf_ip = request.headers.get("CF-Connecting-IP")
+        if cf_ip:
+            try:
+                ipaddress.ip_address(cf_ip)
+                return cf_ip
+            except ValueError:
+                pass
         fwd = request.headers.get("X-Forwarded-For", "")
         ip = fwd.split(",")[0].strip()
         try:
