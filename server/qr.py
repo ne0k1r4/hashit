@@ -4,10 +4,8 @@ styles: dots, rounded, blocks, gradient, neon, minimal
 """
 
 import io
-import math
-import colorsys
 from typing import Literal
-from PIL import Image, ImageDraw, ImageFilter, ImageChops
+from PIL import Image, ImageDraw, ImageFilter
 
 Style = Literal["dots", "rounded", "blocks", "gradient", "neon", "minimal"]
 
@@ -246,7 +244,7 @@ def render_blocks(matrix, size, fg, bg, accent) -> Image.Image:
 
     fg_rgb  = fg
     acc_rgb = accent
-    dim_rgb = tuple(max(0, v - 30) for v in fg_rgb)
+    tuple(max(0, v - 30) for v in fg_rgb)
 
     for r in range(n):
         for c in range(n):

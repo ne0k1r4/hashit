@@ -1,0 +1,50 @@
+diff --git a/services/build-workers/package.json b/services/build-workers/package.json
+index d7fa63f..ac06507 100644
+--- a/services/build-workers/package.json
++++ b/services/build-workers/package.json
+@@ -23,5 +23,8 @@
+     "@types/bun": "^1.1.6",
+     "@types/tar": "^6.1.13",
+     "typescript": "^5.5.3"
++  },
++  "overrides": {
++    "ioredis": "^5.4.1"
+   }
+ }
+diff --git a/services/build-workers/src/storage/s3.ts b/services/build-workers/src/storage/s3.ts
+index f884750..7895930 100644
+--- a/services/build-workers/src/storage/s3.ts
++++ b/services/build-workers/src/storage/s3.ts
+@@ -10,8 +10,8 @@ export class S3Storage {
+   constructor(config: WorkerConfig) {
+     this.client = new S3Client({
+       region: config.S3_REGION,
+-      endpoint: config.S3_ENDPOINT,
+-      forcePathStyle: config.S3_FORCE_PATH_STYLE
++      forcePathStyle: config.S3_FORCE_PATH_STYLE,
++      ...(config.S3_ENDPOINT !== undefined ? { endpoint: config.S3_ENDPOINT } : {})
+     });
+   }
+ 
+diff --git a/services/build-workers/src/workspace.ts b/services/build-workers/src/workspace.ts
+index 602cb8c..5cbd78b 100644
+--- a/services/build-workers/src/workspace.ts
++++ b/services/build-workers/src/workspace.ts
+@@ -1,7 +1,7 @@
+ import { mkdtemp, mkdir, rm, writeFile, readdir, stat } from "node:fs/promises";
+ import os from "node:os";
+ import path from "node:path";
+-import tar from "tar";
++import { x as tarExtract } from "tar";
+ import type { BuildPlatform } from "./types";
+ 
+ export async function createWorkspace(root: string, buildId: string, platform: BuildPlatform): Promise<string> {
+@@ -20,7 +20,7 @@ export async function extractSourceArchive(workspace: string, archive: Uint8Arra
+   const sourceDir = path.join(workspace, "source");
+   await mkdir(sourceDir, { recursive: true });
+   await writeFile(archivePath, archive);
+-  await tar.x({
++  await tarExtract({
+     file: archivePath,
+     cwd: sourceDir,
+     strip: 0,

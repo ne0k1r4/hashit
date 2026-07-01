@@ -14,8 +14,13 @@ from pathlib import Path
 SERVER = os.getenv("HASHIT_SERVER", "https://hashit.io")
 
 # short names bc i got tired of typing RESET every time
-R = "\033[0m"; B = "\033[1m"; D = "\033[2m"
-G = "\033[32m"; RE = "\033[31m"; Y = "\033[33m"; C = "\033[36m"
+R = "\033[0m"
+B = "\033[1m"
+D = "\033[2m"
+G = "\033[32m"
+RE = "\033[31m"
+Y = "\033[33m"
+C = "\033[36m"
 
 def die(msg):
     # every cli needs a die(), fight me
@@ -25,7 +30,8 @@ def die(msg):
 def fmt_size(n):
     # stolen from stackoverflow ngl
     for u in ["B","KB","MB","GB"]:
-        if n < 1024: return f"{n:.1f} {u}"
+        if n < 1024:
+            return f"{n:.1f} {u}"
         n /= 1024
     return f"{n:.1f} TB"
 
@@ -73,8 +79,10 @@ def api(endpoint, mp=None, method="POST"):
             return json.loads(r.read())
     except urllib.error.HTTPError as e:
         body = e.read().decode()
-        try: detail = json.loads(body).get("detail", body)
-        except: detail = body
+        try:
+            detail = json.loads(body).get("detail", body)
+        except (ValueError, AttributeError):
+            detail = body
         die(f"{e.code} — {detail}")
     except Exception as e:
         die(str(e))
@@ -93,9 +101,12 @@ def cmd_send(args):
     mp.add_file("file", path.name, path.read_bytes(),
                 mimetypes.guess_type(str(path))[0] or "application/octet-stream")
     mp.add_field("ttl", args.expires)
-    if args.password: mp.add_field("password", args.password)
-    if args.max_downloads: mp.add_field("max_downloads", str(args.max_downloads))
-    if args.note: mp.add_field("note", args.note)
+    if args.password:
+        mp.add_field("password", args.password)
+    if args.max_downloads:
+        mp.add_field("max_downloads", str(args.max_downloads))
+    if args.note:
+        mp.add_field("note", args.note)
 
     r = api("/api/upload", mp)
     print(f" {G}done{R}")
@@ -110,8 +121,10 @@ def cmd_send(args):
     print(f"  {D}file     {R}{r['filename']}")
     print(f"  {D}size     {R}{fmt_size(r['size'])}")
     print(f"  {D}expires  {R}{fmt_date(r['expires_at'])}")
-    if r.get("protected"): print(f"  {D}password {R}{Y}protected{R}")
-    if r.get("max_downloads"): print(f"  {D}limit    {R}{r['max_downloads']} downloads")
+    if r.get("protected"):
+        print(f"  {D}password {R}{Y}protected{R}")
+    if r.get("max_downloads"):
+        print(f"  {D}limit    {R}{r['max_downloads']} downloads")
     print()
     print(f"  {D}curl -LO \"{r['url'].replace('/d/', '/api/download/')}\"{R}")
     print(f"  {D}delete token: {r['delete_token'][:16]}...{R}")
@@ -130,7 +143,8 @@ def cmd_paste(args):
     mp.add_field("content", content)
     mp.add_field("filename", args.name)
     mp.add_field("ttl", args.expires)
-    if args.password: mp.add_field("password", args.password)
+    if args.password:
+        mp.add_field("password", args.password)
 
     r = api("/api/paste", mp)
 
@@ -149,7 +163,8 @@ def cmd_url(args):
     mp = Multipart()
     mp.add_field("url", args.url)
     mp.add_field("ttl", args.expires)
-    if args.password: mp.add_field("password", args.password)
+    if args.password:
+        mp.add_field("password", args.password)
     r = api("/api/upload-url", mp)
     print(f" {G}done{R}")
     if args.json:
@@ -170,8 +185,10 @@ def cmd_info(args):
         with urllib.request.urlopen(url, timeout=10) as resp:
             r = json.loads(resp.read())
     except urllib.error.HTTPError as e:
-        if e.code == 404: die("not found or expired")
-        if e.code == 401: die("password required (--password)")
+        if e.code == 404:
+            die("not found or expired")
+        if e.code == 401:
+            die("password required (--password)")
         die(str(e.code))
 
     if args.json:
@@ -185,7 +202,8 @@ def cmd_info(args):
     print(f"  {D}expires   {R}{fmt_date(r['expires_at'])}")
     print(f"  {D}downloads {R}{r['downloads']}" + (f"/{r['max_downloads']}" if r['max_downloads'] else ""))
     print(f"  {D}protected {R}{'yes' if r['protected'] else 'no'}")
-    if r.get("note"): print(f"  {D}note      {R}{r['note']}")
+    if r.get("note"):
+        print(f"  {D}note      {R}{r['note']}")
     print()
 
 
@@ -199,7 +217,8 @@ def cmd_delete(args):
         with urllib.request.urlopen(req, timeout=10):
             print(f"  {G}deleted{R} {slug}")
     except urllib.error.HTTPError as e:
-        if e.code == 403: die("provide --token or --password")
+        if e.code == 403:
+            die("provide --token or --password")
         die(str(e.code))
 
 
@@ -281,13 +300,20 @@ examples:
     args = p.parse_args()
     SERVER = args.server.rstrip("/")
 
-    if args.cmd == "send": cmd_send(args)
-    elif args.cmd == "paste": cmd_paste(args)
-    elif args.cmd == "url": cmd_url(args)
-    elif args.cmd == "info": cmd_info(args)
-    elif args.cmd == "delete": cmd_delete(args)
-    elif args.cmd == "qr": cmd_qr(args)
-    else: p.print_help()
+    if args.cmd == "send":
+        cmd_send(args)
+    elif args.cmd == "paste":
+        cmd_paste(args)
+    elif args.cmd == "url":
+        cmd_url(args)
+    elif args.cmd == "info":
+        cmd_info(args)
+    elif args.cmd == "delete":
+        cmd_delete(args)
+    elif args.cmd == "qr":
+        cmd_qr(args)
+    else:
+        p.print_help()
 
 
 if __name__ == "__main__":

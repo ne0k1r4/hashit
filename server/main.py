@@ -1,9 +1,7 @@
 # hashit — server v2.0 (by ne0k1r4 · india)
 
 import os
-import io
 import time
-import base64
 import asyncio
 import logging
 import mimetypes
@@ -12,10 +10,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-import aiosqlite
 import aiofiles
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, Response
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -456,13 +453,18 @@ async def qr_code(
     size = max(200, min(size, 1024))
 
     import re as _re
-    if not _re.match(r"^[a-z]+$", style): style = "dots"
-    if not _re.match(r"^[a-z]+$", theme): theme = "dark"
+    if not _re.match(r"^[a-z]+$", style):
+        style = "dots"
+    if not _re.match(r"^[a-z]+$", theme):
+        theme = "dark"
 
     hex_re = _re.compile(r"^#[0-9a-fA-F]{6}$")
-    if fg and not hex_re.match(fg): fg = None
-    if bg and not hex_re.match(bg): bg = None
-    if accent and not hex_re.match(accent): accent = None
+    if fg and not hex_re.match(fg):
+        fg = None
+    if bg and not hex_re.match(bg):
+        bg = None
+    if accent and not hex_re.match(accent):
+        accent = None
 
     try:
         from .qr import generate

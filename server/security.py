@@ -8,7 +8,6 @@ import hashlib
 import secrets
 import ipaddress
 from collections import defaultdict
-from typing import Optional
 from fastapi import Request, HTTPException
 
 SECRET = os.getenv("HASHIT_SECRET", secrets.token_hex(32))
@@ -106,9 +105,12 @@ def get_ip(request: Request) -> str:
 def parse_ttl(s: str) -> int:
     s = s.strip().lower()
     try:
-        if s.endswith("h"): return int(s[:-1]) * 3600
-        if s.endswith("m"): return int(s[:-1]) * 60
-        if s.endswith("d"): return int(s[:-1]) * 86400
+        if s.endswith("h"):
+            return int(s[:-1]) * 3600
+        if s.endswith("m"):
+            return int(s[:-1]) * 60
+        if s.endswith("d"):
+            return int(s[:-1]) * 86400
         return int(s)
     except (ValueError, OverflowError):
         raise HTTPException(400, "invalid ttl — use 30m, 6h, 7d")

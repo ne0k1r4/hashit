@@ -6,7 +6,6 @@ import sqlite3
 import contextlib
 import aiosqlite
 from pathlib import Path
-from typing import Optional
 
 DB_PATH = Path(os.getenv("HASHIT_DB_PATH", str(Path(__file__).parent.parent / "data" / "hashit.db")))
 

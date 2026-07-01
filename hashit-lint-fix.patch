@@ -1,0 +1,268 @@
+diff --git a/cli/hashit.py b/cli/hashit.py
+index 0c3130c..054deff 100644
+--- a/cli/hashit.py
++++ b/cli/hashit.py
+@@ -14,8 +14,13 @@ from pathlib import Path
+ SERVER = os.getenv("HASHIT_SERVER", "https://hashit.io")
+ 
+ # short names bc i got tired of typing RESET every time
+-R = "\033[0m"; B = "\033[1m"; D = "\033[2m"
+-G = "\033[32m"; RE = "\033[31m"; Y = "\033[33m"; C = "\033[36m"
++R = "\033[0m"
++B = "\033[1m"
++D = "\033[2m"
++G = "\033[32m"
++RE = "\033[31m"
++Y = "\033[33m"
++C = "\033[36m"
+ 
+ def die(msg):
+     # every cli needs a die(), fight me
+@@ -25,7 +30,8 @@ def die(msg):
+ def fmt_size(n):
+     # stolen from stackoverflow ngl
+     for u in ["B","KB","MB","GB"]:
+-        if n < 1024: return f"{n:.1f} {u}"
++        if n < 1024:
++            return f"{n:.1f} {u}"
+         n /= 1024
+     return f"{n:.1f} TB"
+ 
+@@ -73,8 +79,10 @@ def api(endpoint, mp=None, method="POST"):
+             return json.loads(r.read())
+     except urllib.error.HTTPError as e:
+         body = e.read().decode()
+-        try: detail = json.loads(body).get("detail", body)
+-        except: detail = body
++        try:
++            detail = json.loads(body).get("detail", body)
++        except (ValueError, AttributeError):
++            detail = body
+         die(f"{e.code} — {detail}")
+     except Exception as e:
+         die(str(e))
+@@ -93,9 +101,12 @@ def cmd_send(args):
+     mp.add_file("file", path.name, path.read_bytes(),
+                 mimetypes.guess_type(str(path))[0] or "application/octet-stream")
+     mp.add_field("ttl", args.expires)
+-    if args.password: mp.add_field("password", args.password)
+-    if args.max_downloads: mp.add_field("max_downloads", str(args.max_downloads))
+-    if args.note: mp.add_field("note", args.note)
++    if args.password:
++        mp.add_field("password", args.password)
++    if args.max_downloads:
++        mp.add_field("max_downloads", str(args.max_downloads))
++    if args.note:
++        mp.add_field("note", args.note)
+ 
+     r = api("/api/upload", mp)
+     print(f" {G}done{R}")
+@@ -110,8 +121,10 @@ def cmd_send(args):
+     print(f"  {D}file     {R}{r['filename']}")
+     print(f"  {D}size     {R}{fmt_size(r['size'])}")
+     print(f"  {D}expires  {R}{fmt_date(r['expires_at'])}")
+-    if r.get("protected"): print(f"  {D}password {R}{Y}protected{R}")
+-    if r.get("max_downloads"): print(f"  {D}limit    {R}{r['max_downloads']} downloads")
++    if r.get("protected"):
++        print(f"  {D}password {R}{Y}protected{R}")
++    if r.get("max_downloads"):
++        print(f"  {D}limit    {R}{r['max_downloads']} downloads")
+     print()
+     print(f"  {D}curl -LO \"{r['url'].replace('/d/', '/api/download/')}\"{R}")
+     print(f"  {D}delete token: {r['delete_token'][:16]}...{R}")
+@@ -130,7 +143,8 @@ def cmd_paste(args):
+     mp.add_field("content", content)
+     mp.add_field("filename", args.name)
+     mp.add_field("ttl", args.expires)
+-    if args.password: mp.add_field("password", args.password)
++    if args.password:
++        mp.add_field("password", args.password)
+ 
+     r = api("/api/paste", mp)
+ 
+@@ -149,7 +163,8 @@ def cmd_url(args):
+     mp = Multipart()
+     mp.add_field("url", args.url)
+     mp.add_field("ttl", args.expires)
+-    if args.password: mp.add_field("password", args.password)
++    if args.password:
++        mp.add_field("password", args.password)
+     r = api("/api/upload-url", mp)
+     print(f" {G}done{R}")
+     if args.json:
+@@ -170,8 +185,10 @@ def cmd_info(args):
+         with urllib.request.urlopen(url, timeout=10) as resp:
+             r = json.loads(resp.read())
+     except urllib.error.HTTPError as e:
+-        if e.code == 404: die("not found or expired")
+-        if e.code == 401: die("password required (--password)")
++        if e.code == 404:
++            die("not found or expired")
++        if e.code == 401:
++            die("password required (--password)")
+         die(str(e.code))
+ 
+     if args.json:
+@@ -185,7 +202,8 @@ def cmd_info(args):
+     print(f"  {D}expires   {R}{fmt_date(r['expires_at'])}")
+     print(f"  {D}downloads {R}{r['downloads']}" + (f"/{r['max_downloads']}" if r['max_downloads'] else ""))
+     print(f"  {D}protected {R}{'yes' if r['protected'] else 'no'}")
+-    if r.get("note"): print(f"  {D}note      {R}{r['note']}")
++    if r.get("note"):
++        print(f"  {D}note      {R}{r['note']}")
+     print()
+ 
+ 
+@@ -199,7 +217,8 @@ def cmd_delete(args):
+         with urllib.request.urlopen(req, timeout=10):
+             print(f"  {G}deleted{R} {slug}")
+     except urllib.error.HTTPError as e:
+-        if e.code == 403: die("provide --token or --password")
++        if e.code == 403:
++            die("provide --token or --password")
+         die(str(e.code))
+ 
+ 
+@@ -281,13 +300,20 @@ examples:
+     args = p.parse_args()
+     SERVER = args.server.rstrip("/")
+ 
+-    if args.cmd == "send": cmd_send(args)
+-    elif args.cmd == "paste": cmd_paste(args)
+-    elif args.cmd == "url": cmd_url(args)
+-    elif args.cmd == "info": cmd_info(args)
+-    elif args.cmd == "delete": cmd_delete(args)
+-    elif args.cmd == "qr": cmd_qr(args)
+-    else: p.print_help()
++    if args.cmd == "send":
++        cmd_send(args)
++    elif args.cmd == "paste":
++        cmd_paste(args)
++    elif args.cmd == "url":
++        cmd_url(args)
++    elif args.cmd == "info":
++        cmd_info(args)
++    elif args.cmd == "delete":
++        cmd_delete(args)
++    elif args.cmd == "qr":
++        cmd_qr(args)
++    else:
++        p.print_help()
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/server/db.py b/server/db.py
+index 9f6d0c1..b7fe767 100644
+--- a/server/db.py
++++ b/server/db.py
+@@ -6,7 +6,6 @@ import sqlite3
+ import contextlib
+ import aiosqlite
+ from pathlib import Path
+-from typing import Optional
+ 
+ DB_PATH = Path(os.getenv("HASHIT_DB_PATH", str(Path(__file__).parent.parent / "data" / "hashit.db")))
+ 
+diff --git a/server/main.py b/server/main.py
+index f7363e9..dbbeb88 100644
+--- a/server/main.py
++++ b/server/main.py
+@@ -1,9 +1,7 @@
+ # hashit — server v2.0 (by ne0k1r4 · india)
+ 
+ import os
+-import io
+ import time
+-import base64
+ import asyncio
+ import logging
+ import mimetypes
+@@ -12,10 +10,9 @@ from datetime import datetime, timezone
+ from pathlib import Path
+ from typing import Optional
+ 
+-import aiosqlite
+ import aiofiles
+ from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, Response
+-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
++from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+ from fastapi.staticfiles import StaticFiles
+ from fastapi.middleware.cors import CORSMiddleware
+ 
+@@ -451,13 +448,18 @@ async def qr_code(
+     size = max(200, min(size, 1024))
+ 
+     import re as _re
+-    if not _re.match(r"^[a-z]+$", style): style = "dots"
+-    if not _re.match(r"^[a-z]+$", theme): theme = "dark"
++    if not _re.match(r"^[a-z]+$", style):
++        style = "dots"
++    if not _re.match(r"^[a-z]+$", theme):
++        theme = "dark"
+ 
+     hex_re = _re.compile(r"^#[0-9a-fA-F]{6}$")
+-    if fg and not hex_re.match(fg): fg = None
+-    if bg and not hex_re.match(bg): bg = None
+-    if accent and not hex_re.match(accent): accent = None
++    if fg and not hex_re.match(fg):
++        fg = None
++    if bg and not hex_re.match(bg):
++        bg = None
++    if accent and not hex_re.match(accent):
++        accent = None
+ 
+     try:
+         from .qr import generate
+diff --git a/server/qr.py b/server/qr.py
+index 8c62b04..6c76814 100644
+--- a/server/qr.py
++++ b/server/qr.py
+@@ -4,10 +4,8 @@ styles: dots, rounded, blocks, gradient, neon, minimal
+ """
+ 
+ import io
+-import math
+-import colorsys
+ from typing import Literal
+-from PIL import Image, ImageDraw, ImageFilter, ImageChops
++from PIL import Image, ImageDraw, ImageFilter
+ 
+ Style = Literal["dots", "rounded", "blocks", "gradient", "neon", "minimal"]
+ 
+@@ -246,7 +244,7 @@ def render_blocks(matrix, size, fg, bg, accent) -> Image.Image:
+ 
+     fg_rgb  = fg
+     acc_rgb = accent
+-    dim_rgb = tuple(max(0, v - 30) for v in fg_rgb)
++    tuple(max(0, v - 30) for v in fg_rgb)
+ 
+     for r in range(n):
+         for c in range(n):
+diff --git a/server/security.py b/server/security.py
+index 56de908..ec848ff 100644
+--- a/server/security.py
++++ b/server/security.py
+@@ -8,7 +8,6 @@ import hashlib
+ import secrets
+ import ipaddress
+ from collections import defaultdict
+-from typing import Optional
+ from fastapi import Request, HTTPException
+ 
+ SECRET = os.getenv("HASHIT_SECRET", secrets.token_hex(32))
+@@ -99,9 +98,12 @@ def get_ip(request: Request) -> str:
+ def parse_ttl(s: str) -> int:
+     s = s.strip().lower()
+     try:
+-        if s.endswith("h"): return int(s[:-1]) * 3600
+-        if s.endswith("m"): return int(s[:-1]) * 60
+-        if s.endswith("d"): return int(s[:-1]) * 86400
++        if s.endswith("h"):
++            return int(s[:-1]) * 3600
++        if s.endswith("m"):
++            return int(s[:-1]) * 60
++        if s.endswith("d"):
++            return int(s[:-1]) * 86400
+         return int(s)
+     except (ValueError, OverflowError):
+         raise HTTPException(400, "invalid ttl — use 30m, 6h, 7d")
