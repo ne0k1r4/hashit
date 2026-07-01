@@ -32,8 +32,12 @@ from .security import (
 UPLOAD_DIR = Path(os.getenv("HASHIT_UPLOAD_DIR", "/tmp/hashit_uploads"))
 MAX_SIZE = int(os.getenv("HASHIT_MAX_SIZE_MB", "512")) * 1 << 20
 MAX_TTL = int(os.getenv("HASHIT_MAX_TTL_HOURS", "168")) * 3600
-_rand_sub = f"hashit-{secrets.token_hex(4)}"
-BASE_URL = os.getenv("HASHIT_BASE_URL", f"https://{_rand_sub}.trycloudflare.com").rstrip("/")
+_env_base = os.getenv("HASHIT_BASE_URL")
+if not _env_base or "your-domain.com" in _env_base:
+    _rand_sub = f"hashit-{secrets.token_hex(4)}"
+    BASE_URL = f"https://{_rand_sub}.trycloudflare.com"
+else:
+    BASE_URL = _env_base.rstrip("/")
 ADMIN_TOKEN = os.getenv("HASHIT_ADMIN_TOKEN", secrets.token_hex(16))
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -116,7 +120,7 @@ def ts_iso(ts: float) -> str:
 def get_base_url(request: Request) -> str:
     # Use request base url to automatically adapt to ngrok, local IP, or custom domains
     env_url = os.getenv("HASHIT_BASE_URL")
-    if env_url:
+    if env_url and "your-domain.com" not in env_url:
         return env_url.rstrip("/")
     host = request.headers.get("X-Forwarded-Host") or request.headers.get("Host")
     proto = request.headers.get("X-Forwarded-Proto") or request.url.scheme
