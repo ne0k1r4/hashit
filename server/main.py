@@ -32,7 +32,8 @@ from .security import (
 UPLOAD_DIR = Path(os.getenv("HASHIT_UPLOAD_DIR", "/tmp/hashit_uploads"))
 MAX_SIZE = int(os.getenv("HASHIT_MAX_SIZE_MB", "512")) * 1 << 20
 MAX_TTL = int(os.getenv("HASHIT_MAX_TTL_HOURS", "168")) * 3600
-BASE_URL = os.getenv("HASHIT_BASE_URL", "http://localhost:8000").rstrip("/")
+_rand_sub = f"hashit-{secrets.token_hex(4)}"
+BASE_URL = os.getenv("HASHIT_BASE_URL", f"https://{_rand_sub}.trycloudflare.com").rstrip("/")
 ADMIN_TOKEN = os.getenv("HASHIT_ADMIN_TOKEN", secrets.token_hex(16))
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -119,9 +120,9 @@ def get_base_url(request: Request) -> str:
         return env_url.rstrip("/")
     host = request.headers.get("X-Forwarded-Host") or request.headers.get("Host")
     proto = request.headers.get("X-Forwarded-Proto") or request.url.scheme
-    if host:
+    if host and "localhost" not in host and "127.0.0.1" not in host:
         return f"{proto}://{host}"
-    return str(request.base_url).rstrip("/")
+    return BASE_URL
 
 
 def require_admin(request: Request):
