@@ -17,18 +17,15 @@ services:
   tunnel:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    env_file: .env
-    entrypoint: /bin/sh
-    command: >
-      -c "
-      if [ -n \"$$TUNNEL_TOKEN\" ]; then
-        echo 'Starting Cloudflare Named Tunnel...';
-        exec cloudflared tunnel --no-autoupdate run;
-      else
-        echo 'Starting Cloudflare Quick Tunnel (Free Random Domain)...';
-        exec cloudflared tunnel --no-autoupdate run --url http://hashit:8000;
-      fi
-      "
+    # DEFAULT: Spins up a free Cloudflare Quick Tunnel (random subdomain).
+    # To switch to a custom domain (Named Tunnel), comment the command line below
+    # and uncomment the command & environment block for the Named Tunnel.
+    command: tunnel --no-autoupdate run --url http://hashit:8000
+
+    # CUSTOM DOMAIN / NAMED TUNNEL CONFIGURATION:
+    # command: tunnel --no-autoupdate run
+    # environment:
+    #   - TUNNEL_TOKEN=${TUNNEL_TOKEN}
 
 volumes:
   data:
